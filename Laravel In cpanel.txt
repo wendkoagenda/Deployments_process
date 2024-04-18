@@ -1,0 +1,10 @@
+Comment creer un link symbolique pour les images  
+1) Creer une route : 
+
+Route::get('/storage-link',function(){
+    $targetFolder = storage_path('app/public');
+    $linkFolder = $_SERVER['DOCUMENT_ROOT'] . '/storage';
+    symlink($targetFolder,$linkFolder);
+});
+
+2) Coir le projet BilaadgaUi2
