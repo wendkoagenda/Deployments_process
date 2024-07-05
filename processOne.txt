@@ -1,0 +1,244 @@
+***************************
+Connect to server
+*ssh-keygen -R 62.72.24.21
+
+*ssh root@62.72.24.21 , _#+P57%S7J4n!-5P77t:vuA5vn3FMu2Vt/y6rg*c4}_
+
+****************************
+Creer un nouvel utilisateur 
+*sudo adduser devops
+*less /etc/passwd 
+*sudo groupadd grpdevops
+*less /etc/group
+*sudo usermod -G grpdevops devops
+*sudo usermod -G sudo devops
+
+***************************
+Intall apache2
+*sudo apt update
+*sudo apt install apache2
+*sudo systemctl status apache2
+*sudo systemctl start apache2
+*sudo systemctl stop apache2
+*sudo systemctl restart apache2
+Ajuste apache config
+*sudo nano /etc/apache2/apache2.conf => AllowOverride All in /var/www Directory
+*sudo nano /etc/apache2/apache2.conf
+	LimitRequestFieldSize 16380
+*sudo systemctl restart apache2
+
+
+***************************
+Install Php
+*sudo add-apt-repository ppa:ondrej/php
+*sudo apt update
+*sudo apt install php8.1 php8.1-common php8.1-cli php8.1-fpm php8.1-mysql php8.1-mbstring php8.1-xml php8.1-curl php8.1-zip php8.1-gd
+*sudo apt install libapache2-mod-php8.1
+*sudo a2enmod php8.1
+*sudo systemctl restart apache2
+*php -m
+
+
+***************************
+Install composer 
+*curl -sS https://getcomposer.org/installer -o composer-setup.php
+*curl -sS https://composer.github.io/installer.sig -o composer.sig
+*php -r "if (hash_file('SHA384', 'composer-setup.php') === file_get_contents('composer.sig')) { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
+*php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+*composer --version
+
+
+***************************
+Install Mysql-server
+*sudo apt install mysql-server
+*sudo systemctl start mysql
+*sudo mysql
+*mysql> ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'password';
+*mysql> exit
+*sudo mysql_secure_installation
+*mysql -u root -p
+*CREATE USER 'apiuser'@'localhost' IDENTIFIED WITH caching_sha2_password BY 'apiuserpassword';
+
+***************************
+Generate ssh key
+*ssh-keygen -t rsa -b 2048
+*nom du repertoire par default 
+*cat /fichier contenant la cle
+
+
+***************************
+Clone project 
+*cd /var/www/ 
+*git clone git@gitlab.com:yiikiri/campusflowapi.git
+*cd campusflowapi
+*git checkout develop
+
+
+***************************
+Create virtual host
+*cd /etc/apache2/sites-available/ 
+*nano api.campusflow.cloud.conf
+<VirtualHost *:80>
+    ServerName www.api.campusflow.cloud
+    ServerAlias api.campusflow.cloud
+    ServerAdmin contact@campusflow.cloud
+    DocumentRoot /var/www/campusflowapi/public
+    ErrorLog ${APACHE_LOG_DIR}/campusFlowApiError.log
+    CustomLog ${APACHE_LOG_DIR}/campusFlowApiAccess.log combined
+    <Directory /var/www/campusflowapi/public/>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+
+<VirtualHost *:80>
+  ServerName www.ist.api.campusflow.cloud
+  ServerAlias ist.api.campusflow.cloud
+  ServerAdmin contact@campusflow.cloud
+  DocumentRoot /var/www/campusflowapi/public
+  ErrorLog ${APACHE_LOG_DIR}/campusFlowApiError.log
+  CustomLog ${APACHE_LOG_DIR}/campusFlowApiAccess.log combined
+  <Directory /var/www/campusflowapi/public/>
+    Options -Indexes +FollowSymLinks
+    AllowOverride All
+    Require all granted
+  </Directory>
+  Header always set Access-Control-Allow-Origin 'http://ist.campusflow.cloud'
+  Header always set Access-Control-Allow-Methods 'GET, POST, PUT, DELETE, OPTIONS'
+  Header always set Access-Control-Allow-Headers 'Content-Type, Authorization, X-Requested-With'  
+  Header always set Access-Control-Max-Age 3600 
+</VirtualHost>
+
+*a2ensite api.campusflow.cloud.conf
+*a2enmod rewrite
+*systemctl restart apache2
+*apache2ctl -t
+---------------
+*nano ist.api.campusflow.cloud.conf
+<VirtualHost *:80>
+    ServerName www.ist.api.campusflow.cloud
+    ServerAlias ist.api.campusflow.cloud
+    ServerAdmin contact@campusflow.cloud
+    DocumentRoot /var/www/campusflowapi/public
+    ErrorLog ${APACHE_LOG_DIR}/campusFlowApiError.log
+    CustomLog ${APACHE_LOG_DIR}/campusFlowApiAccess.log combined
+    <Directory /var/www/campusflowapi/public/>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
+</VirtualHost>
+*a2ensite ist.api.campusflow.cloud.conf
+*systemctl restart apache2
+*apache2ctl -t
+
+
+**************************
+Configure the laravel project 
+*cd /var/www/campusflowapi
+*cp .env.example .env
+*nano .env
+*composer install --optimize-autoloader --no-dev
+*php artisan key:generate
+*php artisan jwt:secret
+*php artisan cache:clear
+*php artisan config:clear
+
+
+**************************
+Permissions 
+*sudo chown -R www-data:www-data /var/www/campusflowapi
+*sudo chown -R www-data:www-data storage
+*sudo chown -R www-data:www-data bootstrap/cache
+*sudo groups root
+*sudo usermod -a -G www-data root
+*sudo groups root
+*sudo find storage -type f -exec chmod 644 {} \;
+*sudo find storage -type d -exec chmod 755 {} \;
+
+
+*************************
+Install php myadmin 
+*sudo apt update
+*sudo apt install phpmyadmin 
+*sudo update-alternatives --set php /usr/bin/php8.1
+*sudo php -v
+
+
+*************************
+Import BD
+*Import SQL files
+*mysql -u root -p
+*GRANT ALL PRIVILEGES ON multytenant.* TO 'apiuser'@'localhost';
+*GRANT ALL PRIVILEGES ON `tenantd9c69748-635d-4abb-ac30-c9673747c3f4`.* TO 'apiuser'@'localhost';
+*mysql> exit
+*Change domaine name by: 'ist.api.campusflow.cloud' , but if you went to use postmane remplace it by 'www.ist.api.campusflow.cloud'
+*********************
+
+REACT
+
+******************
+Instal nvm and node 
+*curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+*source ~/.bashrc
+*nvm ls-remote
+*nvm install v18.12.0
+*nvm use v18.12.0
+
+
+********************
+Clone project 
+*cd /var/www
+*git clone git@gitlab.com:yiikiri/campusflowweb.git
+*cd campusflowweb
+*git checkout develop
+*npm install
+*nano src/constants/configStrings.tsx
+*npm run build
+- En cas d'erreur sur la commance "git pull" : 
+*git config --global --add safe.directory /var/www/campusflowapi
+
+********************
+Create virtual host
+*cd /etc/apache2/sites-available/ 
+*nano ist.campusflow.cloud.conf
+<VirtualHost *:80>
+    ServerName www.ist.campusflow.cloud
+    ServerAlias ist.campusflow.cloud
+    ServerAdmin contact@campusflow.cloud
+    DocumentRoot /var/www/campusflowweb/dist
+    ErrorLog ${APACHE_LOG_DIR}/campusFlowWebError.log
+    CustomLog ${APACHE_LOG_DIR}/campusFlowWebAccess.log combined
+</VirtualHost>
+*a2ensite ist.campusflow.cloud.conf
+*systemctl restart apache2
+*apache2ctl -t
+
+Access to log Files 
+*cd /var/log/apache2
+
+**********************
+Intall SSL 
+*apt install certbot python3-certbot-apache
+*certbot --apache
+*sudo certbot certificates
+*sudo certbot delete --cert-name yourdomain.com
+
+Active ufw 
+*sudo ufw enable
+*sudo ufw allow 22/tcp
+//*sudo ufw allow 80/tcp // Pas obligatoire
+*sudo ufw allow 443/tcp
+*ufw status verbose
+
+---**********************Update sys
+*cd /var/www/campusflowapi
+*git config --global --add safe.directory /var/www/campusflowapi
+*git pull
+*cd /var/www/campusflowweb
+*rm -r dist 
+*git pull
+*nano src/constants/configStrings.tsx
+*npm run build
+
